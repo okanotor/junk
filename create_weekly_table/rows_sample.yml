@@ -1,0 +1,17 @@
+- name: Load Average
+  prefix: ldavg
+- name: CPU Usage
+  prefix: cpu
+  detail:
+    - name: ALL
+      prefix: all
+    - name: "#0"
+      prefix: "0"
+    - name: "#1"
+      prefix: "1"
+    - name: "#2"
+      prefix: "2"
+    - name: "#3"
+      prefix: "3"
+- name: Memory Usage
+  prefix: mem
