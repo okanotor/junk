@@ -1,0 +1,13 @@
+# mode : 'stdout' or 'postgresql'
+:mode: postgresql
+:datasource:
+  :host: somehost
+  :port: 5432
+  :user: dbuser
+  :password: dbpass
+  :dbname: testdb
+  :schema: public
+# conver list hostname to ip address
+:hosts:
+  hostname1: "xxx.xxx.xxx.xxx"
+  hostname2: "yyy.yyy.yyy.yyy"
