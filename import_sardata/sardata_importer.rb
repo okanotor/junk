@@ -503,6 +503,10 @@ module SardataImporter
 
   module Writer
     class Base
+      
+      COLUMN_NAME_IP_ADDRESS = "ip_addr"
+      COLUMN_NAME_TIMESTAMP = "collect_ts"
+      
       def self.create(config)
         case config[:mode]
         when "postgresql" then PostgreSQL.new(config)
@@ -527,43 +531,6 @@ module SardataImporter
         when dev_name == "temp_no" then value.gsub(/temp/, "")
         when dev_name == "in_no" then value.gsub(/in/, "")
         else value
-        end
-      end
-    end
-    
-    class Stdout < Base
-      def initialize(config)
-        super(config)
-      end
-      
-      def write(stockers)
-        stockers.each do |stocker|
-          stocker.stocked_dataset.each do |data|
-            puts data
-          end
-        end
-      end
-    end
-
-    class PostgreSQL < Base
-
-      COLUMN_NAME_IP_ADDRESS = "ip_addr"
-      COLUMN_NAME_TIMESTAMP = "collect_ts"
-      
-      def initialize(config)
-        super(config)
-        @datasource = config[:datasource]
-      end
-
-      def write(stockers)
-        conn = PG::connect(@datasource)
-        conn.transaction do |c|
-          stockers.each do |stocker|
-            table_name = "sar_#{stocker.type}"
-            stocker.stocked_dataset.each do |data|
-              c.exec(create_sql(stocker, data))
-            end
-          end
         end
       end
 
@@ -592,6 +559,45 @@ module SardataImporter
         end
         
         "INSERT INTO sar_#{stocker.type} (#{column_names.join(', ')}) VALUES (#{values.join(', ')});"
+      end
+    end
+    
+    class Stdout < Base
+      def initialize(config)
+        super(config)
+        @format = config[:format]
+      end
+      
+      def write(stockers)
+        stockers.each do |stocker|
+          stocker.stocked_dataset.each do |data|
+            case @format
+            when "sql" then puts create_sql(stocker, data)
+            when "pp" then pp data
+            else puts data
+            end
+          end
+        end
+      end
+    end
+
+    class PostgreSQL < Base
+
+      def initialize(config)
+        super(config)
+        @datasource = config[:datasource]
+      end
+
+      def write(stockers)
+        conn = PG::connect(@datasource)
+        conn.transaction do |c|
+          stockers.each do |stocker|
+            table_name = "sar_#{stocker.type}"
+            stocker.stocked_dataset.each do |data|
+              c.exec(create_sql(stocker, data))
+            end
+          end
+        end
       end
     end
   end
