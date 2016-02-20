@@ -432,6 +432,8 @@ module SardataImporter
     FIELD_NAME_HOSTNAME = "hostname"
     FIELD_NAME_TIMESTAMP = "timestamp"
     FIELD_NAME_DEV_NAME = "dev_name"
+
+    DEVICE_NAME_NOT_APPLICABLE = "-"
     
     def self.stockers
       DEFINITIONS.map { |d| Stocker.new(d[:type], d[:dev_name], d[:fields]) }
@@ -451,8 +453,8 @@ module SardataImporter
       case field_name
       when "tps"
         case @type
-        when "io" then (device_name == "-")
-        when "disk" then (device_name != "-")
+        when "io" then (device_name == DEVICE_NAME_NOT_APPLICABLE)
+        when "disk" then (device_name != DEVICE_NAME_NOT_APPLICABLE)
         else false
         end
       when "DEVICE"
