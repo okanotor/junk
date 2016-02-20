@@ -8,6 +8,7 @@ require "csv"
 require "pp"
 require "yaml"
 require "pg"
+require "logger"
 
 module SardataImporter
   class Stocker
@@ -507,14 +508,15 @@ module SardataImporter
       COLUMN_NAME_IP_ADDRESS = "ip_addr"
       COLUMN_NAME_TIMESTAMP = "collect_ts"
       
-      def self.create(config)
+      def self.create(config, logger)
         case config[:mode]
-        when "postgresql" then PostgreSQL.new(config)
-        else Stdout.new(config)
+        when "postgresql" then PostgreSQL.new(config, logger)
+        else Stdout.new(config, logger)
         end
       end
       
-      def initialize(config)
+      def initialize(config, logger)
+        @logger = logger
         @hosts = config[:hosts]
       end
       
@@ -566,8 +568,8 @@ module SardataImporter
     end
     
     class Stdout < Base
-      def initialize(config)
-        super(config)
+      def initialize(config, logger)
+        super(config, logger)
         @format = config[:format]
       end
       
@@ -586,8 +588,8 @@ module SardataImporter
 
     class PostgreSQL < Base
 
-      def initialize(config)
-        super(config)
+      def initialize(config, logger)
+        super(config, logger)
         @datasource = config[:datasource]
       end
 
@@ -596,6 +598,7 @@ module SardataImporter
         conn.transaction do |c|
           stockers.each do |stocker|
             table_name = "sar_#{stocker.type}"
+            @logger.debug("insert into #{table_name}...") if @logger
             stocker.stocked_dataset.each do |data|
               c.exec(create_sql(stocker, data))
             end
@@ -606,9 +609,10 @@ module SardataImporter
   end
 
   class Main
-    def self.main(dataset, writer_config)
+    def self.main(dataset, writer_config, logger = nil)
       stockers = Stocker.stockers
-      
+
+      logger.debug("start stock data") if logger
       dataset.each do |data|
         stockers.each do |stocker|
           if stocker.acceptable?(data)
@@ -617,12 +621,15 @@ module SardataImporter
           end
         end
       end
-      
-      Writer::Base.create(writer_config).write(stockers)
+
+      logger.debug("start write data") if logger
+      Writer::Base.create(writer_config, logger).write(stockers)
     end
   end
 end
 
 if __FILE__ == $0
-  SardataImporter::Main.main(CSV.read(ARGV[0], "r", {:col_sep => "\t"}), YAML.load_file(ARGV[1]))
+  logger = Logger.new(STDOUT)
+  logger.level = Logger::DEBUG
+  SardataImporter::Main.main(CSV.read(ARGV[0], "r", {:col_sep => "\t"}), YAML.load_file(ARGV[1]), logger)
 end
