@@ -143,7 +143,7 @@ module SardataImporter
         }
       },
       {
-        :type => "net_edev", :fields => {
+        :type => "net_edev", :dev_name => "iface_name", :fields => {
           "rxerr/s"  => { :col_name => "rxerrps",  :data_type => :numeric, :precision => 8, :scale => 2 },
           "txerr/s"  => { :col_name => "txerrps",  :data_type => :numeric, :precision => 8, :scale => 2 },
           "coll/s"   => { :col_name => "collps",   :data_type => :numeric, :precision => 8, :scale => 2 },
@@ -554,7 +554,10 @@ module SardataImporter
             
           when stocker.fields.keys.include?(field_name)
             column_names << stocker.fields[field_name][:col_name]
-            values << value
+            values << case
+                      when stocker.fields[field_name][:data_type] then "'#{value}'"
+                      else value
+                      end
           end
         end
         
