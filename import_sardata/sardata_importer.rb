@@ -557,7 +557,7 @@ module SardataImporter
           when stocker.fields.keys.include?(field_name)
             column_names << stocker.fields[field_name][:col_name]
             values << case
-                      when stocker.fields[field_name][:data_type] then "'#{value}'"
+                      when stocker.fields[field_name][:data_type] == :string then "'#{value}'"
                       else value
                       end
           end
